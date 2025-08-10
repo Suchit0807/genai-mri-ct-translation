@@ -2,7 +2,7 @@
 # Training two separate U-Net models for brain tumor segmentation:
 #   1. MRI images + masks
 #   2. CT images + masks
-# Dataset: Preprocessed & cropped augmented datasets from /data/processed
+# Dataset: Preprocessed & cropped augmented datasets from data_preprocessing/preprocess_data.py
 # -----------------------------------------------------------
 
 import os
