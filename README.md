@@ -1,179 +1,172 @@
 # 🧠 Unpaired MRI ↔ CT Image Translation for Brain Tumour Segmentation
 
-_A deep learning framework using CycleGAN for unpaired MRI ↔ CT image translation, aimed at bridging modality gaps and enhancing cross-domain brain tumour segmentation._
+A deep learning framework using **CycleGAN** for unpaired **MRI ↔ CT image translation**, aimed at bridging modality gaps in medical imaging for better **brain tumour segmentation**.  
+This approach applies **Generative AI (GenAI)** concepts to medical imaging, enabling cross-modality synthesis without paired datasets, improving segmentation in low-data or low-resource clinical settings.
 
 ---
 
-## 📌 Problem Statement
+## 🤖 Introduction to Generative AI
 
-Brain tumours are commonly diagnosed and monitored using **Magnetic Resonance Imaging (MRI)** and **Computed Tomography (CT)** scans. Each modality offers unique advantages:
+**Generative AI (GenAI)** refers to a branch of Artificial Intelligence focused on creating new content — such as images, text, audio, or video — that resembles real-world data.  
+Unlike traditional AI models that classify or predict from existing inputs, generative models **learn data distributions** and can produce synthetic, yet realistic, outputs.
 
-- **MRI**: Superior soft-tissue contrast, clearer tumour boundaries, no ionising radiation.  
-- **CT**: Faster acquisition, better for bone structures, more widely available in resource-limited settings.
+In medical imaging, Generative AI can:
+- **Generate synthetic scans** to augment limited datasets.
+- **Translate between modalities** (e.g., MRI ↔ CT).
+- **Improve cross-domain performance** in downstream tasks like segmentation or diagnosis.
 
-However, models trained for tumour segmentation on one modality often perform poorly on the other due to **domain shift** — systematic differences in intensity distribution, texture, and contrast between modalities.
+Popular Generative AI approaches include:
+- **GANs (Generative Adversarial Networks)**
+- **VAEs (Variational Autoencoders)**
+- **Diffusion Models**
 
-**Challenge:**
-- Acquiring large-scale, *paired* MRI and CT datasets is impractical.
-- Training separate models for each modality is resource-intensive.
-- Direct cross-modality application leads to severe performance drops.
+---
+
+## 🧠 What are GANs?
+
+A **Generative Adversarial Network (GAN)**, introduced by Goodfellow et al. (2014), is a framework with two neural networks competing in a zero-sum game:
+
+- **Generator (G)**: Produces synthetic samples from random noise or a source domain.
+- **Discriminator (D)**: Tries to distinguish between real and synthetic samples.
+
+Training Process:
+1. The generator tries to produce outputs indistinguishable from real data.
+2. The discriminator evaluates whether the sample is real or fake.
+3. Both models improve iteratively — the generator gets better at “fooling” the discriminator, and the discriminator gets better at spotting fakes.
+
+This **adversarial training** produces highly realistic synthetic data.
+
+---
+
+## 🔄 From GAN to CycleGAN
+
+While standard GANs require paired data (e.g., an MRI image and its exact CT counterpart), **CycleGAN** (Zhu et al., 2017) enables **unpaired image-to-image translation**.
+
+**Key innovation:**  
+CycleGAN introduces **cycle-consistency** — if you translate an image from Domain A → Domain B → back to Domain A, you should retrieve the original image.
+
+---
+
+## 🏗 CycleGAN Architecture
+
+### Components:
+1. **Two Generators:**
+   - \( G_{MRI \to CT} \): Converts MRI images into CT-like images.
+   - \( G_{CT \to MRI} \): Converts CT images into MRI-like images.
+
+2. **Two Discriminators:**
+   - \( D_{CT} \): Distinguishes between real CT and generated CT images.
+   - \( D_{MRI} \): Distinguishes between real MRI and generated MRI images.
+
+### Loss Functions:
+- **Adversarial Loss**: Encourages generated images to be indistinguishable from real ones in the target domain.
+- **Cycle-Consistency Loss**: Ensures A→B→A returns the original input.
+- **Identity Loss**: Ensures that translating an image already in the target domain doesn’t alter it unnecessarily.
+- **SSIM Loss (Structural Similarity)**: Preserves anatomical structures.
+- **Feature Adaptation Loss**: Aligns high-level features between domains using pretrained networks.
+
+![CycleGAN Architecture](assets/cyclegan_architecture.png)
+
+---
+
+## 📜 Problem Statement
+
+**Context:**
+- MRI offers better soft tissue contrast — ideal for tumour localisation.
+- CT is faster, cheaper, and better for bone imaging.
+
+**Challenge:**  
+Segmentation models trained on MRI often fail on CT, and vice versa, due to **domain shift** — statistical differences in pixel intensity, contrast, and textures between modalities.
+
+**Real-world limitation:**  
+Acquiring paired MRI and CT scans for the same patients is rare and expensive.  
+Thus, we need an **unpaired translation** approach to bridge the modality gap.
 
 **Goal:**  
-Develop an **unsupervised, two-way image translation pipeline** capable of:
-1. Translating MRI ↔ CT without paired training data.
-2. Preserving anatomical and structural details.
-3. Improving segmentation performance across modalities.
+Translate between MRI and CT while preserving structural and pathological information, enabling improved cross-modality segmentation.
 
 ---
 
-## 📊 Dataset
+## 📂 Dataset
 
 - **Source**: Jordan University Hospital (JUH)
-- **Patients**: 20 (mix of tumour-present and tumour-free cases)
-- **Total Images**: 178 axial 2D slices  
-  - 90 MRI slices  
-  - 88 CT slices  
-- **Image Size**: Resized to 256 × 256 pixels
-- **Annotations**: Brain tumour masks prepared by expert radiologists
-- **Data Split**: 80% training / 20% testing (patient-wise split to avoid leakage)
+- **Patients**: 20
+- **Images**: 178 axial 2D slices (90 MRI, 88 CT), resized to 256×256
+- **Labels**: Tumour masks annotated by radiologists
+- **Setting**: Unpaired MRI and CT datasets (different patients for each modality)
 
 **Example Images with Masks:**
 ![Dataset with Masks](assets/dataset_masks.png)
 
 ---
 
-## 🧪 Proposal & Approach
+## 🛠 Preprocessing
 
-We propose an **unpaired image-to-image translation framework** based on **CycleGAN** to address modality gaps.
+Preprocessing ensures model stability and better generalisation.
 
-### Key objectives:
-1. **Bidirectional translation**: MRI → CT and CT → MRI.
-2. **Structure preservation**: Maintain fine-grained anatomical details.
-3. **Loss enhancements**: Incorporate additional constraints beyond standard adversarial and cycle-consistency losses.
-4. **Evaluate downstream benefit**: Measure segmentation model performance with and without translated images.
-
----
-
-## 🧩 Methodology
-
-### 1️⃣ Data Preprocessing
-- **Grayscale conversion** (MRI & CT slices)
-- **Resizing** to 256 × 256
-- **Normalization** to [0, 1]
-- **Channel expansion** for network compatibility
-- **Data Augmentation**:
-  - ±30° rotations
-  - Horizontal flips
-  - Vertical flips
-  - Contrast adjustments
+1. Convert to **grayscale**
+2. Resize to **256×256**
+3. Normalise pixel values to [0, 1]
+4. Add channel dimension
+5. Augmentation:
+   - Rotations (±30°)
+   - Horizontal & vertical flips
+   - Contrast changes
 
 **Pipeline:**
 ![Preprocessing Pipeline](assets/preprocessing_pipeline.png)
 
 ---
 
-### 2️⃣ CycleGAN Architecture
+## 📋 Methodology
 
-CycleGAN enables **unpaired** domain translation using:
-- Two **Generators**:
-  - \( G_{MRI \to CT} \)
-  - \( G_{CT \to MRI} \)
-- Two **Discriminators**:
-  - \( D_{CT} \)
-  - \( D_{MRI} \)
+### 1️⃣ CycleGAN Translation
+- Unpaired training between MRI and CT.
+- Feature adaptation via pretrained ResNet/VGG features.
+- Additional SSIM loss for structural fidelity.
 
-**Loss Components:**
-1. **Adversarial Loss** — Encourages realistic target-domain outputs.
-2. **Cycle Consistency Loss** — Ensures MRI → CT → MRI reconstructs original MRI (and vice versa).
-3. **Identity Loss** — Preserves structure when source and target domains are the same.
-4. **SSIM Loss** — Promotes structural similarity in generated images.
-5. **Feature Adaptation Loss** — Aligns high-level features between domains using pretrained ResNet/VGG.
+### 2️⃣ U-Net Segmentation
+- Evaluates impact of synthetic data on tumour segmentation.
+- Metrics: Dice Coefficient & IoU.
 
-**Architecture Diagram:**
-![CycleGAN Architecture](assets/cyclegan_architecture.png)
+### 3️⃣ Evaluation
+- Compare baseline segmentation vs segmentation trained with synthetic modality augmentation.
 
 ---
 
-### 3️⃣ Segmentation Model — U-Net
+## 🖼 Sample Translations
 
-- **Architecture**: Symmetrical encoder-decoder with skip connections.
-- **Loss Function**: Binary Cross-Entropy + Dice Loss.
-- **Metrics**: Dice Coefficient, Intersection over Union (IoU).
-- **Purpose**: Quantify downstream effect of modality translation on segmentation performance.
-
----
-
-## ⚙️ Implementation Details
-
-- **Framework**: TensorFlow / Keras
-- **CycleGAN**:
-  - Generators: ResNet-based with residual blocks
-  - Discriminators: PatchGAN (70×70 receptive field)
-  - Loss weights:  
-    - λcycle = 10  
-    - λidentity = 5  
-    - λSSIM = 10  
-    - λfeature = 0.1
-  - Optimizer: Adam (lr=0.0002, β1=0.5)
-- **Segmentation**:
-  - U-Net, trained for 50 epochs
-  - Batch size: 32
-  - Optimizer: Adam
-
----
-
-## 📊 Results
-
-### 🔄 Translation Examples
-**MRI → CT (top) and CT → MRI (bottom)**
+MRI → CT (top) and CT → MRI (bottom):
 
 ![Sample Translations](assets/sample_translations.png)
 
 ---
 
-### 📈 Quantitative Results
+## 📊 Segmentation Results
 
-#### Segmentation Performance
-| Model        | Test on MRI | Test on CT |
-|--------------|------------|------------|
-| **MRI U-Net** | Dice: 0.8792 / IoU: 0.8077 | Dice: 0.1907 / IoU: 0.1066 |
-| **CT U-Net**  | Dice: 0.2667 / IoU: 0.1698 | Dice: 0.6646 / IoU: 0.5519 |
+Segmentation metrics visualised below:
 
 ![Segmentation Metrics](assets/segmentation_metrics.png)
 
-**Key Observation:** Severe drop in performance when testing on the opposite modality, confirming **domain shift**.
+---
+
+## 📚 Key Takeaways
+
+- **Generative AI in medical imaging** can help bridge modality gaps.
+- **CycleGAN** enables unpaired MRI↔CT translation, preserving critical structures.
+- **Feature adaptation + SSIM loss** improves perceptual quality (SSIM ↑ vs baseline GANs).
+- Downstream segmentation performance benefits from synthetic modality augmentation.
 
 ---
 
-### 📌 Key Gains from Proposed Method
-- **Feature Adaptation + SSIM Loss** improved CT→MRI SSIM to **0.5285**, outperforming DiscoGAN, DualGAN, and ComboGAN in SSIM.
-- Cycle reconstructions achieved **SSIM ≈ 0.86–0.92**, **PSNR ≈ 27 dB**, showing strong content preservation.
-- Downstream segmentation potential improved when synthetic images were added to training data (future extension).
+## 📧 Contact
+
+**Author:** Suchit Pathak  
+📩 **Email:** suchitpathak0807@gmail.com  
+🌐 **LinkedIn:** [linkedin.com/in/suchitpathak](https://linkedin.com/in/suchitpathak)  
+💻 **GitHub:** [github.com/Suchit0807](https://github.com/Suchit0807)
 
 ---
 
-## 🎯 Conclusions
-- **Unsupervised modality translation** is possible while preserving fine anatomical details.
-- **Domain adaptation is critical** in medical image segmentation.
-- Future work: Train segmentation on synthetic + real images to directly evaluate clinical utility.
+**⭐ If you found this work useful, please consider starring the repo!**
 
----
-
-## 🚀 How to Run
-
-```bash
-# Clone repository
-git clone https://github.com/<username>/genai-mri-ct-translation.git
-cd genai-mri-ct-translation
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Train CycleGAN
-python train_cyclegan.py
-
-# Run translation demo
-python demo_translation.py --input path/to/image
-
-# Evaluate segmentation
-python evaluate_segmentation.py
