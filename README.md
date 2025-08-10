@@ -163,9 +163,9 @@ Segmentation metrics visualised below:
 
 **Author:** Suchit Pathak  
 📩 **Email:** suchitpathak0807@gmail.com  
-🌐 **LinkedIn:** [linkedin.com/in/suchitpathak](https://linkedin.com/in/suchitpathak)  
-💻 **GitHub:** [github.com/Suchit0807](https://github.com/Suchit0807)
-
+💻 **GitHub:** [github.com/Suchit0807](https://github.com/Suchit0807)  
+🌐 **Portfolio:** [suchit0807.github.io/suchit-portfolio](https://suchit0807.github.io/suchit-portfolio/)  
+🌐 **LinkedIn:** [linkedin.com/in/suchitpathak](https://linkedin.com/in/suchitpathak)
 ---
 
 **⭐ If you found this work useful, please consider starring the repo!**
