@@ -59,6 +59,21 @@ It learns two mappings simultaneously:
 
 ## 📂 Dataset
 
+The dataset used in this project contains MRI and CT scans along with expert-annotated tumour masks, preprocessed and augmented versions, and training/testing splits.
+
+📥 **Download Dataset:** [Google Drive – JUH MRI–CT Dataset](https://drive.google.com/drive/folders/1-K-N9naJF0WQhHp0EuMLMTgE7cX4oPS_?usp=sharing)  
+
+**Folder Structure:**
+- **JUH_MR-CT_dataset** – Original MRI and CT DICOM images with masks.  
+- **JUH_MR-CT_augmented_dataset** – Augmented dataset (rotations, flips, contrast changes).  
+- **JUH_MR-CT_cropped_augmented_dataset** – Cropped and augmented images used for training.  
+- **JUH_MR-CT_splits** – Training, validation, and testing dataset splits.  
+- **TEST MRI TO CT** – Test set for MRI → CT translation.  
+- **TEST CT TO MRI** – Test set for CT → MRI translation.  
+
+> **Note:** The dataset is large and is not stored in this repository. Please download it before running training or evaluation scripts.
+
+
 - **Source**: Jordan University Hospital (JUH)
 - **Patients**: 20  
 - **Images**: 178 axial 2D slices (90 MRI, 88 CT)  
