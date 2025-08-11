@@ -1,6 +1,6 @@
 <h1 align="left">🧠 Unpaired MRI ↔ CT Image Translation for Brain Tumour Segmentation</h1>
 
-<p align="center">
+<p align="left">
 A <b>CycleGAN-based</b> deep learning framework for unpaired MRI ↔ CT translation, reducing domain shift in medical imaging and improving brain tumour segmentation performance.
 </p>
 
